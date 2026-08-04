@@ -1,30 +1,33 @@
 --[[
-	SlickUI v2 — dark, glassy, blue/black-shaded UI library for Roblox
+	SlickUI v3 — dark, glassy, blue/black-shaded UI library for Roblox
 
-	NEW IN v2:
-	  - Auto-scales to the player's screen (desktop/tablet/mobile) via UIScale
-	  - Diagonal blue -> black gradient background instead of flat black
-	  - Faint background grid (toggleable) like the reference site
-	  - Soft top glow ("orb") behind the header
-	  - Switchable accent themes: Blue / Purple / Teal / Red / Green / Orange
-	  - Smoother tweens on everything, incl. a working drag-slider
-	  - New CreateSection() header + CreateThemePicker() swatch row
+	CHANGES FROM v2:
+	  - Removed the auto-scale/UIScale logic (it was shrinking everything
+	    down on some screens, which made the panel tiny and the window
+	    controls nearly invisible)
+	  - Removed the background grid lines
+	  - Window is bigger by default (640x420) and fixed-size again
+	  - Fixed minimize/maximize: they were TEXT glyphs ("–" and "○") that
+	    don't exist in the Gotham font on some clients, so only "×" (a
+	    normal character) was rendering. All three window-control icons
+	    are now drawn with vector frames instead of text, so they always show.
+	  - General "jazz": soft drop shadow under the panel, hover-lift on
+	    buttons/swatches, smoother tweens, slightly reworked spacing.
 
 	USAGE:
 		local SlickUI = loadstring(game:HttpGet("RAW_URL"))()
 
 		local Window = SlickUI:CreateWindow({
 			Title = "CavTape",
-			SubTitle = "v2.0",
-			Accent = "Blue",   -- Blue / Purple / Teal / Red / Green / Orange
-			Grid = true,       -- background grid on/off
+			SubTitle = "v3.0",
+			Accent = "Blue", -- Blue / Purple / Teal / Red / Green / Orange
 		})
 
 		local Tab = Window:CreateTab("Home")
 		Tab:CreateSection("General")
 		Tab:CreateToggle({ Text = "Enabled", Default = true, Callback = function(v) end })
 		Tab:CreateSlider({ Text = "Speed", Min = 0, Max = 100, Default = 50, Callback = function(v) end })
-		Tab:CreateThemePicker() -- lets the user swap accent colors live
+		Tab:CreateThemePicker()
 
 		SlickUI:Notify({ Title = "Saved", Content = "Config saved.", Duration = 3 })
 ]]
@@ -32,7 +35,6 @@
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
-local Camera = workspace.CurrentCamera
 
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
@@ -51,19 +53,17 @@ local Accents = {
 local Theme = {
 	Accent    = Accents.Blue,
 	AccentDim = Color3.fromRGB(39, 128, 255),
-	Bg        = Color3.fromRGB(6, 8, 11),
-	BgBlue    = Color3.fromRGB(8, 16, 30),   -- mixed-in blue-black shade
-	Panel     = Color3.fromRGB(13, 17, 24),
-	Panel2    = Color3.fromRGB(19, 25, 34),
+	Bg        = Color3.fromRGB(7, 9, 13),
+	BgBlue    = Color3.fromRGB(10, 18, 32),
+	Panel     = Color3.fromRGB(14, 18, 26),
+	Panel2    = Color3.fromRGB(20, 26, 36),
 	Ink       = Color3.fromRGB(246, 248, 251),
-	Muted     = Color3.fromRGB(140, 150, 167),
-	Dim       = Color3.fromRGB(93, 103, 119),
+	Muted     = Color3.fromRGB(142, 152, 169),
+	Dim       = Color3.fromRGB(95, 105, 121),
 	Line      = Color3.fromRGB(255, 255, 255),
 }
 
--- objects registered here get recolored live when the accent changes
-local AccentBindings = {} -- { {inst=Frame, prop="BackgroundColor3"}, ... }
-
+local AccentBindings = {}
 local function bindAccent(inst, prop)
 	prop = prop or "BackgroundColor3"
 	AccentBindings[#AccentBindings + 1] = { inst = inst, prop = prop }
@@ -83,8 +83,7 @@ local function corner(r) return new("UICorner", { CornerRadius = UDim.new(0, r o
 
 local function stroke(color, thickness, transparency)
 	return new("UIStroke", {
-		Color = color or Theme.Line,
-		Thickness = thickness or 1,
+		Color = color or Theme.Line, Thickness = thickness or 1,
 		Transparency = transparency == nil and 0.88 or transparency,
 	})
 end
@@ -97,7 +96,7 @@ local function pad(l, t, r, b)
 end
 
 local function tween(inst, props, time, style, dir)
-	TweenService:Create(inst, TweenInfo.new(time or 0.18, style or Enum.EasingStyle.Quad, dir or Enum.EasingDirection.Out), props):Play()
+	TweenService:Create(inst, TweenInfo.new(time or 0.16, style or Enum.EasingStyle.Quad, dir or Enum.EasingDirection.Out), props):Play()
 end
 
 local function makeDraggable(handle, target)
@@ -120,27 +119,37 @@ local function makeDraggable(handle, target)
 	end)
 end
 
--- soft round glow built from stacked, fading circles (no image assets needed)
-local function glowOrb(parent, size, color, centerTransparency)
+-- vector window-control icons (never relies on a font glyph existing)
+local function iconMinimize(parent)
+	new("Frame", {
+		BackgroundColor3 = Theme.Muted, Name = "Icon",
+		AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, 0),
+		Size = UDim2.new(0, 10, 0, 2), Parent = parent,
+	}, { corner(1) })
+end
+
+local function iconMaximize(parent)
+	new("Frame", {
+		BackgroundTransparency = 1, Name = "Icon",
+		AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, 0),
+		Size = UDim2.new(0, 10, 0, 10), Parent = parent,
+	}, { corner(2), stroke(Theme.Muted, 1.4, 0) })
+end
+
+local function iconClose(parent)
 	local holder = new("Frame", {
-		BackgroundTransparency = 1,
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Size = UDim2.new(0, size, 0, size * 0.6),
-		Parent = parent,
+		BackgroundTransparency = 1, Name = "Icon",
+		AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, 0),
+		Size = UDim2.new(0, 12, 0, 12), Parent = parent,
 	})
-	local steps = 4
-	for i = steps, 1, -1 do
-		local scale = i / steps
-		new("Frame", {
-			BackgroundColor3 = color,
-			BackgroundTransparency = 1 - ((1 - (centerTransparency or 0.55)) * (1 - scale) * 0.6 + (1 - scale) * 0.15),
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.new(0.5, 0, 0.5, 0),
-			Size = UDim2.new(scale, 0, scale, 0),
-			ZIndex = i,
-			Parent = holder,
-		}, { corner(9999) })
-	end
+	new("Frame", {
+		BackgroundColor3 = Theme.Muted, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, 0),
+		Rotation = 45, Size = UDim2.new(1, 0, 0, 2), Parent = holder,
+	}, { corner(1) })
+	new("Frame", {
+		BackgroundColor3 = Theme.Muted, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, 0),
+		Rotation = -45, Size = UDim2.new(1, 0, 0, 2), Parent = holder,
+	}, { corner(1) })
 	return holder
 end
 
@@ -151,8 +160,7 @@ SlickUI.__index = SlickUI
 
 local ScreenGui = new("ScreenGui", {
 	Name = "SlickUI", ResetOnSpawn = false,
-	ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
-	Parent = PlayerGui,
+	ZIndexBehavior = Enum.ZIndexBehavior.Sibling, Parent = PlayerGui,
 })
 
 local NotifHolder = new("Frame", {
@@ -188,10 +196,10 @@ function SlickUI:Notify(opts)
 	local accent = new("Frame", { Size = UDim2.new(0, 3, 1, 0), Parent = card }, { corner(2) })
 	bindAccent(accent)
 
-	tween(card, { BackgroundTransparency = 0.05 }, 0.25)
+	tween(card, { BackgroundTransparency = 0.05 }, 0.22)
 	task.delay(opts.Duration or 3.5, function()
-		tween(card, { BackgroundTransparency = 1 }, 0.25)
-		task.wait(0.25)
+		tween(card, { BackgroundTransparency = 1 }, 0.22)
+		task.wait(0.22)
 		card:Destroy()
 	end)
 end
@@ -200,9 +208,7 @@ function SlickUI:SetAccent(nameOrColor)
 	local color = typeof(nameOrColor) == "Color3" and nameOrColor or Accents[nameOrColor]
 	if not color then return end
 	Theme.Accent = color
-	for _, b in ipairs(AccentBindings) do
-		tween(b.inst, { [b.prop] = color }, 0.2)
-	end
+	for _, b in ipairs(AccentBindings) do tween(b.inst, { [b.prop] = color }, 0.2) end
 end
 
 -- ===================== WINDOW =====================
@@ -214,56 +220,31 @@ function SlickUI:CreateWindow(opts)
 	local Window = setmetatable({}, SlickUI)
 	Window.Tabs = {}
 
-	local Main = new("Frame", {
-		Name = "Main", BackgroundColor3 = Theme.Bg, ClipsDescendants = true,
-		Position = UDim2.new(0.5, -290, 0.5, -190), Size = UDim2.new(0, 580, 0, 380),
-		Parent = ScreenGui,
-	}, {
-		corner(18), stroke(Theme.Line, 1, 0.85),
-		new("UIGradient", {
-			Color = ColorSequence.new(Theme.BgBlue, Theme.Bg),
-			Rotation = 65,
-		}),
-	})
-
-	-- state shared by the window controls (minimize / maximize / close)
-	local Sidebar, ContentHolder
-	local originalSize, originalPos = Main.Size, Main.Position
+	local W, H = 640, 420
+	local originalPos = UDim2.new(0.5, -W / 2, 0.5, -H / 2)
+	local originalSize = UDim2.new(0, W, 0, H)
 	local isMinimized, isMaximized = false, false
 
-	-- UIScale that keeps the panel a sensible size on any device
-	local Scale = new("UIScale", { Scale = 1, Parent = Main })
-	local function updateScale()
-		local vp = Camera.ViewportSize
-		local s = math.clamp(math.min(vp.X / 1280, vp.Y / 800), 0.55, 1.05)
-		tween(Scale, { Scale = s }, 0.25)
-		-- re-center after scaling so it never drifts off-screen on tiny devices, unless fullscreened
-		if not isMaximized then
-			Main.Position = originalPos
-		end
-	end
-	updateScale()
-	Camera:GetPropertyChangedSignal("ViewportSize"):Connect(updateScale)
-
-	-- background glow behind the header, like the hero orb in the reference
-	local orb = glowOrb(Main, 620, Theme.Accent, 0.62)
-	orb.Position = UDim2.new(0.5, 0, 0, -40)
-	bindAccent(orb:GetChildren()[1])
-	for _, c in ipairs(orb:GetChildren()) do bindAccent(c) end
-
-	-- faint grid backdrop
-	if opts.Grid ~= false then
-		local Grid = new("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), ZIndex = 0, Parent = Main })
-		for x = 0, 580, 40 do
-			new("Frame", { BackgroundColor3 = Theme.Accent, BackgroundTransparency = 0.955, Position = UDim2.new(0, x, 0, 0), Size = UDim2.new(0, 1, 1, 0), ZIndex = 0, Parent = Grid })
-		end
-		for y = 0, 380, 40 do
-			new("Frame", { BackgroundColor3 = Theme.Accent, BackgroundTransparency = 0.955, Position = UDim2.new(0, 0, 0, y), Size = UDim2.new(1, 0, 0, 1), ZIndex = 0, Parent = Grid })
-		end
+	-- soft drop shadow behind the panel (layered, no image asset needed)
+	for i = 3, 1, -1 do
+		new("Frame", {
+			BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.82 + i * 0.04,
+			Position = UDim2.new(0.5, -W / 2 - i * 3, 0.5, -H / 2 - i * 3 + 6),
+			Size = UDim2.new(0, W + i * 6, 0, H + i * 6),
+			ZIndex = 1, Parent = ScreenGui,
+		}, { corner(18 + i) })
 	end
 
-	-- top accent hairline (animated left-right like the reference underline glow)
-	local hairline = new("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 2), Parent = Main }, {
+	local Main = new("Frame", {
+		Name = "Main", BackgroundColor3 = Theme.Bg, ClipsDescendants = true,
+		Position = originalPos, Size = originalSize, ZIndex = 2, Parent = ScreenGui,
+	}, {
+		corner(18), stroke(Theme.Line, 1, 0.85),
+		new("UIGradient", { Color = ColorSequence.new(Theme.BgBlue, Theme.Bg), Rotation = 65 }),
+	})
+
+	-- top accent hairline
+	new("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 2), Parent = Main }, {
 		new("UIGradient", {
 			Color = ColorSequence.new(Theme.Accent, Theme.Accent),
 			Transparency = NumberSequence.new({
@@ -288,43 +269,46 @@ function SlickUI:CreateWindow(opts)
 		})
 	end
 
-	-- minimize / maximize / close controls (top-right, like traffic lights)
+	-- ===== window controls (minimize / maximize / close) =====
 	local Controls = new("Frame", {
 		BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, 0, 0.5, 0), Size = UDim2.new(0, 84, 0, 24), Parent = TopBar,
+		Position = UDim2.new(1, 0, 0.5, 0), Size = UDim2.new(0, 100, 0, 28), Parent = TopBar,
 	}, {
 		new("UIListLayout", {
-			FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6),
+			FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 8),
 			VerticalAlignment = Enum.VerticalAlignment.Center, SortOrder = Enum.SortOrder.LayoutOrder,
 		}),
 	})
 
-	local function controlBtn(symbol, hoverColor)
+	local function controlBtn(iconFn)
 		local b = new("TextButton", {
-			Text = symbol, Font = Enum.Font.GothamBold, TextSize = 13, TextColor3 = Theme.Muted,
-			BackgroundColor3 = Theme.Panel2, Size = UDim2.new(0, 24, 0, 24), Parent = Controls,
-		}, { corner(7), stroke(Theme.Line, 1, 0.88) })
-		b.MouseEnter:Connect(function() tween(b, { TextColor3 = hoverColor }, 0.12) end)
-		b.MouseLeave:Connect(function() tween(b, { TextColor3 = Theme.Muted }, 0.12) end)
+			Text = "", BackgroundColor3 = Theme.Panel2, Size = UDim2.new(0, 28, 0, 28), Parent = Controls,
+		}, { corner(8), stroke(Theme.Line, 1, 0.85) })
+		iconFn(b)
+		b.MouseEnter:Connect(function() tween(b, { BackgroundColor3 = Theme.Line, BackgroundTransparency = 0.9 }, 0.1) end)
+		b.MouseLeave:Connect(function() tween(b, { BackgroundColor3 = Theme.Panel2, BackgroundTransparency = 0 }, 0.1) end)
 		return b
 	end
 
-	local MinBtn = controlBtn("–", Theme.Accent)
-	local MaxBtn = controlBtn("○", Theme.Accent)
-	local CloseBtn = controlBtn("×", Color3.fromRGB(255, 96, 96))
+	local MinBtn = controlBtn(iconMinimize)
+	local MaxBtn = controlBtn(iconMaximize)
+	local CloseBtn = controlBtn(iconClose)
+	CloseBtn.MouseEnter:Connect(function() tween(CloseBtn, { BackgroundColor3 = Color3.fromRGB(255, 70, 90) }, 0.1) end)
+	CloseBtn.MouseLeave:Connect(function() tween(CloseBtn, { BackgroundColor3 = Theme.Panel2 }, 0.1) end)
 
-	-- small floating bubble that reopens the panel after it's closed, so the
-	-- user never has to re-execute the script just to bring it back
+	-- floating bubble that reopens the panel after closing (no re-execute needed)
 	local Reopen = new("TextButton", {
 		Text = "", Visible = false, BackgroundTransparency = 1, BackgroundColor3 = Theme.Panel,
 		AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 24, 1, -24),
-		Size = UDim2.new(0, 46, 0, 46), Parent = ScreenGui,
-	}, { corner(23), stroke(Theme.Line, 1, 0.8) })
+		Size = UDim2.new(0, 48, 0, 48), ZIndex = 5, Parent = ScreenGui,
+	}, { corner(24), stroke(Theme.Line, 1, 0.75) })
 	local ReopenGlyph = new("Frame", {
 		AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, 0), Size = UDim2.new(0, 18, 0, 18), Parent = Reopen,
 	}, { corner(5) })
 	bindAccent(ReopenGlyph)
 	makeDraggable(Reopen, Reopen)
+
+	local Sidebar, ContentHolder -- forward-declared, assigned below
 
 	MinBtn.MouseButton1Click:Connect(function()
 		if isMaximized then
@@ -335,7 +319,7 @@ function SlickUI:CreateWindow(opts)
 		isMinimized = not isMinimized
 		Sidebar.Visible = not isMinimized
 		ContentHolder.Visible = not isMinimized
-		tween(Main, { Size = isMinimized and UDim2.new(originalSize.X.Scale, originalSize.X.Offset, 0, 54) or originalSize }, 0.2)
+		tween(Main, { Size = isMinimized and UDim2.new(0, W, 0, 54) or originalSize }, 0.2)
 	end)
 
 	MaxBtn.MouseButton1Click:Connect(function()
@@ -346,9 +330,9 @@ function SlickUI:CreateWindow(opts)
 		end
 		isMaximized = not isMaximized
 		if isMaximized then
-			tween(Main, { Size = UDim2.new(0.94, 0, 0.9, 0), Position = UDim2.new(0.03, 0, 0.05, 0) }, 0.22)
+			tween(Main, { Size = UDim2.new(0.92, 0, 0.88, 0), Position = UDim2.new(0.04, 0, 0.06, 0) }, 0.2)
 		else
-			tween(Main, { Size = originalSize, Position = originalPos }, 0.22)
+			tween(Main, { Size = originalSize, Position = originalPos }, 0.2)
 		end
 	end)
 
@@ -356,13 +340,13 @@ function SlickUI:CreateWindow(opts)
 		Main.Visible = false
 		Reopen.Visible = true
 		Reopen.BackgroundTransparency = 1
-		tween(Reopen, { BackgroundTransparency = 0.05 }, 0.2)
+		tween(Reopen, { BackgroundTransparency = 0.05 }, 0.18)
 	end)
 
 	Reopen.MouseButton1Click:Connect(function()
 		Main.Visible = true
-		tween(Reopen, { BackgroundTransparency = 1 }, 0.15)
-		task.delay(0.15, function() Reopen.Visible = false end)
+		tween(Reopen, { BackgroundTransparency = 1 }, 0.14)
+		task.delay(0.14, function() Reopen.Visible = false end)
 	end)
 
 	makeDraggable(TopBar, Main)
@@ -370,12 +354,12 @@ function SlickUI:CreateWindow(opts)
 	new("Frame", { BackgroundColor3 = Theme.Line, BackgroundTransparency = 0.92, Size = UDim2.new(1, 0, 0, 1), Position = UDim2.new(0, 0, 0, 54), Parent = Main })
 
 	Sidebar = new("Frame", {
-		BackgroundTransparency = 1, Position = UDim2.new(0, 0, 0, 55), Size = UDim2.new(0, 150, 1, -55), Parent = Main,
-	}, { pad(12, 12, 12, 12), new("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder }) })
+		BackgroundTransparency = 1, Position = UDim2.new(0, 0, 0, 55), Size = UDim2.new(0, 160, 1, -55), Parent = Main,
+	}, { pad(14, 14, 14, 14), new("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder }) })
 
-	new("Frame", { BackgroundColor3 = Theme.Line, BackgroundTransparency = 0.92, Size = UDim2.new(0, 1, 1, -55), Position = UDim2.new(0, 150, 0, 55), Parent = Main })
+	new("Frame", { BackgroundColor3 = Theme.Line, BackgroundTransparency = 0.92, Size = UDim2.new(0, 1, 1, -55), Position = UDim2.new(0, 160, 0, 55), Parent = Main })
 
-	ContentHolder = new("Frame", { BackgroundTransparency = 1, Position = UDim2.new(0, 151, 0, 55), Size = UDim2.new(1, -151, 1, -55), Parent = Main })
+	ContentHolder = new("Frame", { BackgroundTransparency = 1, Position = UDim2.new(0, 161, 0, 55), Size = UDim2.new(1, -161, 1, -55), Parent = Main })
 
 	Window.Main, Window.Sidebar, Window.ContentHolder = Main, Sidebar, ContentHolder
 
@@ -386,14 +370,14 @@ function SlickUI:CreateWindow(opts)
 		local TabBtn = new("TextButton", {
 			Text = name, Font = Enum.Font.Gotham, TextSize = 13, TextColor3 = Theme.Muted,
 			TextXAlignment = Enum.TextXAlignment.Left, BackgroundColor3 = Theme.Panel2, BackgroundTransparency = 1,
-			Size = UDim2.new(1, 0, 0, 32), Parent = Sidebar,
-		}, { corner(8), pad(10, 0, 10, 0) })
+			Size = UDim2.new(1, 0, 0, 34), Parent = Sidebar,
+		}, { corner(9), pad(12, 0, 12, 0) })
 
 		local Page = new("ScrollingFrame", {
 			BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0),
 			CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y,
 			ScrollBarThickness = 3, ScrollBarImageTransparency = 0.4, Visible = false, Parent = ContentHolder,
-		}, { pad(18, 16, 18, 16), new("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }) })
+		}, { pad(20, 18, 20, 18), new("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }) })
 		bindAccent(Page, "ScrollBarImageColor3")
 
 		Tab.Page = Page
@@ -407,6 +391,8 @@ function SlickUI:CreateWindow(opts)
 			tween(TabBtn, { BackgroundTransparency = 0, TextColor3 = Theme.Ink }, 0.12)
 		end
 
+		TabBtn.MouseEnter:Connect(function() if Page.Visible == false then tween(TabBtn, { TextColor3 = Theme.Ink }, 0.1) end end)
+		TabBtn.MouseLeave:Connect(function() if not Page.Visible then tween(TabBtn, { TextColor3 = Theme.Muted }, 0.1) end end)
 		TabBtn.MouseButton1Click:Connect(select)
 		Tab.Button = TabBtn
 		Window.Tabs[#Window.Tabs + 1] = Tab
@@ -432,11 +418,11 @@ function SlickUI:CreateWindow(opts)
 			o = o or {}
 			local Btn = new("TextButton", {
 				Text = o.Text or "Button", Font = Enum.Font.GothamMedium, TextSize = 13,
-				TextColor3 = Color3.fromRGB(255, 255, 255), Size = UDim2.new(1, 0, 0, 36), Parent = Page,
+				TextColor3 = Color3.fromRGB(255, 255, 255), Size = UDim2.new(1, 0, 0, 38), Parent = Page,
 			}, { corner(10) })
 			bindAccent(Btn)
-			Btn.MouseEnter:Connect(function() tween(Btn, { BackgroundColor3 = Theme.AccentDim }, 0.12) end)
-			Btn.MouseLeave:Connect(function() tween(Btn, { BackgroundColor3 = Theme.Accent }, 0.12) end)
+			Btn.MouseEnter:Connect(function() tween(Btn, { BackgroundColor3 = Theme.AccentDim, Size = UDim2.new(1, 0, 0, 40) }, 0.12) end)
+			Btn.MouseLeave:Connect(function() tween(Btn, { BackgroundColor3 = Theme.Accent, Size = UDim2.new(1, 0, 0, 38) }, 0.12) end)
 			Btn.MouseButton1Click:Connect(function() if o.Callback then o.Callback() end end)
 			return Btn
 		end
@@ -444,16 +430,16 @@ function SlickUI:CreateWindow(opts)
 		function Tab:CreateToggle(o)
 			o = o or {}
 			local state = o.Default or false
-			local Row = new("Frame", { BackgroundColor3 = Theme.Panel, Size = UDim2.new(1, 0, 0, 40), Parent = Page }, { corner(10), stroke(Theme.Line, 1, 0.9), pad(12, 0, 12, 0) })
+			local Row = new("Frame", { BackgroundColor3 = Theme.Panel, Size = UDim2.new(1, 0, 0, 42), Parent = Page }, { corner(10), stroke(Theme.Line, 1, 0.9), pad(14, 0, 14, 0) })
 			new("TextLabel", { BackgroundTransparency = 1, Text = o.Text or "Toggle", Font = Enum.Font.Gotham, TextSize = 13, TextColor3 = Theme.Ink, TextXAlignment = Enum.TextXAlignment.Left, Size = UDim2.new(1, -50, 1, 0), Parent = Row })
-			local Track = new("Frame", { BackgroundColor3 = state and Theme.Accent or Theme.Panel2, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, 0, 0.5, 0), Size = UDim2.new(0, 38, 0, 20), Parent = Row }, { corner(10), stroke(Theme.Line, 1, 0.85) })
-			local Knob = new("Frame", { BackgroundColor3 = Color3.fromRGB(255, 255, 255), AnchorPoint = Vector2.new(0, 0.5), Position = state and UDim2.new(1, -18, 0.5, 0) or UDim2.new(0, 2, 0.5, 0), Size = UDim2.new(0, 16, 0, 16), Parent = Track }, { corner(8) })
+			local Track = new("Frame", { BackgroundColor3 = state and Theme.Accent or Theme.Panel2, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, 0, 0.5, 0), Size = UDim2.new(0, 40, 0, 22), Parent = Row }, { corner(11), stroke(Theme.Line, 1, 0.85) })
+			local Knob = new("Frame", { BackgroundColor3 = Color3.fromRGB(255, 255, 255), AnchorPoint = Vector2.new(0, 0.5), Position = state and UDim2.new(1, -19, 0.5, 0) or UDim2.new(0, 2, 0.5, 0), Size = UDim2.new(0, 18, 0, 18), Parent = Track }, { corner(9) })
 			if state then bindAccent(Track) end
 			local click = new("TextButton", { BackgroundTransparency = 1, Text = "", Size = UDim2.new(1, 0, 1, 0), Parent = Row })
 			click.MouseButton1Click:Connect(function()
 				state = not state
 				tween(Track, { BackgroundColor3 = state and Theme.Accent or Theme.Panel2 }, 0.15)
-				tween(Knob, { Position = state and UDim2.new(1, -18, 0.5, 0) or UDim2.new(0, 2, 0.5, 0) }, 0.15)
+				tween(Knob, { Position = state and UDim2.new(1, -19, 0.5, 0) or UDim2.new(0, 2, 0.5, 0) }, 0.15)
 				if o.Callback then o.Callback(state) end
 			end)
 			return { Set = function(v) if v ~= state then click.MouseButton1Click:Fire() end end }
@@ -463,14 +449,14 @@ function SlickUI:CreateWindow(opts)
 			o = o or {}
 			local min, max = o.Min or 0, o.Max or 100
 			local value = math.clamp(o.Default or min, min, max)
-			local Row = new("Frame", { BackgroundColor3 = Theme.Panel, Size = UDim2.new(1, 0, 0, 50), Parent = Page }, { corner(10), stroke(Theme.Line, 1, 0.9), pad(12, 10, 12, 10) })
+			local Row = new("Frame", { BackgroundColor3 = Theme.Panel, Size = UDim2.new(1, 0, 0, 52), Parent = Page }, { corner(10), stroke(Theme.Line, 1, 0.9), pad(14, 11, 14, 11) })
 			new("TextLabel", { BackgroundTransparency = 1, Text = o.Text or "Slider", Font = Enum.Font.Gotham, TextSize = 13, TextColor3 = Theme.Ink, TextXAlignment = Enum.TextXAlignment.Left, Size = UDim2.new(1, -50, 0, 16), Parent = Row })
 			local ValLabel = new("TextLabel", { BackgroundTransparency = 1, Text = tostring(value), Font = Enum.Font.GothamBold, TextSize = 12, TextColor3 = Theme.Accent, TextXAlignment = Enum.TextXAlignment.Right, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 0, 0, 0), Size = UDim2.new(0, 50, 0, 16), Parent = Row })
 			bindAccent(ValLabel, "TextColor3")
-			local Bar = new("Frame", { BackgroundColor3 = Theme.Panel2, Position = UDim2.new(0, 0, 0, 28), Size = UDim2.new(1, 0, 0, 6), Parent = Row }, { corner(3) })
+			local Bar = new("Frame", { BackgroundColor3 = Theme.Panel2, Position = UDim2.new(0, 0, 0, 30), Size = UDim2.new(1, 0, 0, 6), Parent = Row }, { corner(3) })
 			local Fill = new("Frame", { Size = UDim2.new((value - min) / math.max(max - min, 1), 0, 1, 0), Parent = Bar }, { corner(3) })
 			bindAccent(Fill)
-			local Knob = new("Frame", { BackgroundColor3 = Color3.fromRGB(255, 255, 255), AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new((value - min) / math.max(max - min, 1), 0, 0.5, 0), Size = UDim2.new(0, 12, 0, 12), ZIndex = 2, Parent = Bar }, { corner(6), stroke(Theme.Accent, 2, 0) })
+			local Knob = new("Frame", { BackgroundColor3 = Color3.fromRGB(255, 255, 255), AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new((value - min) / math.max(max - min, 1), 0, 0.5, 0), Size = UDim2.new(0, 14, 0, 14), ZIndex = 2, Parent = Bar }, { corner(7), stroke(Theme.Accent, 2, 0) })
 
 			local dragging = false
 			local function updateFromX(x)
@@ -507,18 +493,18 @@ function SlickUI:CreateWindow(opts)
 			local options = o.Options or {}
 			local open = false
 			local selected = o.Default or options[1]
-			local Row = new("Frame", { BackgroundColor3 = Theme.Panel, ClipsDescendants = true, Size = UDim2.new(1, 0, 0, 40), Parent = Page }, { corner(10), stroke(Theme.Line, 1, 0.9) })
-			local Head = new("TextButton", { BackgroundTransparency = 1, Text = "", Size = UDim2.new(1, 0, 0, 40), Parent = Row }, { pad(12, 0, 12, 0) })
+			local Row = new("Frame", { BackgroundColor3 = Theme.Panel, ClipsDescendants = true, Size = UDim2.new(1, 0, 0, 42), Parent = Page }, { corner(10), stroke(Theme.Line, 1, 0.9) })
+			local Head = new("TextButton", { BackgroundTransparency = 1, Text = "", Size = UDim2.new(1, 0, 0, 42), Parent = Row }, { pad(14, 0, 14, 0) })
 			new("TextLabel", { BackgroundTransparency = 1, Text = o.Text or "Dropdown", Font = Enum.Font.Gotham, TextSize = 13, TextColor3 = Theme.Ink, TextXAlignment = Enum.TextXAlignment.Left, Size = UDim2.new(0.5, 0, 1, 0), Parent = Head })
 			local SelLabel = new("TextLabel", { BackgroundTransparency = 1, Text = tostring(selected), Font = Enum.Font.Gotham, TextSize = 12, TextColor3 = Theme.Muted, TextXAlignment = Enum.TextXAlignment.Right, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 0, 0, 0), Size = UDim2.new(0.5, 0, 1, 0), Parent = Head })
-			local List = new("Frame", { BackgroundTransparency = 1, Position = UDim2.new(0, 0, 0, 40), Size = UDim2.new(1, 0, 0, #options * 30), Parent = Row }, { pad(12, 4, 12, 8), new("UIListLayout", { Padding = UDim.new(0, 2), SortOrder = Enum.SortOrder.LayoutOrder }) })
+			local List = new("Frame", { BackgroundTransparency = 1, Position = UDim2.new(0, 0, 0, 42), Size = UDim2.new(1, 0, 0, #options * 30), Parent = Row }, { pad(14, 4, 14, 8), new("UIListLayout", { Padding = UDim.new(0, 2), SortOrder = Enum.SortOrder.LayoutOrder }) })
 			for _, opt in ipairs(options) do
 				local OptBtn = new("TextButton", { Text = tostring(opt), Font = Enum.Font.Gotham, TextSize = 12, TextColor3 = Theme.Muted, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 26), Parent = List })
 				OptBtn.MouseButton1Click:Connect(function()
 					selected = opt
 					SelLabel.Text = tostring(opt)
 					open = false
-					tween(Row, { Size = UDim2.new(1, 0, 0, 40) }, 0.15)
+					tween(Row, { Size = UDim2.new(1, 0, 0, 42) }, 0.15)
 					if o.Callback then o.Callback(opt) end
 				end)
 				OptBtn.MouseEnter:Connect(function() tween(OptBtn, { TextColor3 = Theme.Ink }, 0.1) end)
@@ -526,7 +512,7 @@ function SlickUI:CreateWindow(opts)
 			end
 			Head.MouseButton1Click:Connect(function()
 				open = not open
-				tween(Row, { Size = UDim2.new(1, 0, 0, open and (40 + #options * 30) or 40) }, 0.15)
+				tween(Row, { Size = UDim2.new(1, 0, 0, open and (42 + #options * 30) or 42) }, 0.15)
 			end)
 			return { Set = function(v) selected = v; SelLabel.Text = tostring(v) end }
 		end
@@ -538,6 +524,8 @@ function SlickUI:CreateWindow(opts)
 			})
 			for name, color in pairs(Accents) do
 				local Swatch = new("TextButton", { Text = "", BackgroundColor3 = color, Size = UDim2.new(0, 28, 0, 28), Parent = Row }, { corner(8), stroke(Theme.Line, 1, 0.7) })
+				Swatch.MouseEnter:Connect(function() tween(Swatch, { Size = UDim2.new(0, 31, 0, 31) }, 0.1) end)
+				Swatch.MouseLeave:Connect(function() tween(Swatch, { Size = UDim2.new(0, 28, 0, 28) }, 0.1) end)
 				Swatch.MouseButton1Click:Connect(function() SlickUI:SetAccent(name) end)
 			end
 		end
