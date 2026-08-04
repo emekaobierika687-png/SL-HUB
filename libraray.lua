@@ -226,14 +226,21 @@ function SlickUI:CreateWindow(opts)
 		}),
 	})
 
+	-- state shared by the window controls (minimize / maximize / close)
+	local Sidebar, ContentHolder
+	local originalSize, originalPos = Main.Size, Main.Position
+	local isMinimized, isMaximized = false, false
+
 	-- UIScale that keeps the panel a sensible size on any device
 	local Scale = new("UIScale", { Scale = 1, Parent = Main })
 	local function updateScale()
 		local vp = Camera.ViewportSize
 		local s = math.clamp(math.min(vp.X / 1280, vp.Y / 800), 0.55, 1.05)
 		tween(Scale, { Scale = s }, 0.25)
-		-- re-center after scaling so it never drifts off-screen on tiny devices
-		Main.Position = UDim2.new(0.5, -290, 0.5, -190)
+		-- re-center after scaling so it never drifts off-screen on tiny devices, unless fullscreened
+		if not isMaximized then
+			Main.Position = originalPos
+		end
 	end
 	updateScale()
 	Camera:GetPropertyChangedSignal("ViewportSize"):Connect(updateScale)
@@ -281,25 +288,94 @@ function SlickUI:CreateWindow(opts)
 		})
 	end
 
-	local CloseBtn = new("TextButton", {
-		Text = "×", Font = Enum.Font.GothamBold, TextSize = 20, TextColor3 = Theme.Muted, BackgroundTransparency = 1,
-		AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, 0, 0.5, 0), Size = UDim2.new(0, 28, 0, 28), Parent = TopBar,
+	-- minimize / maximize / close controls (top-right, like traffic lights)
+	local Controls = new("Frame", {
+		BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, 0, 0.5, 0), Size = UDim2.new(0, 84, 0, 24), Parent = TopBar,
+	}, {
+		new("UIListLayout", {
+			FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6),
+			VerticalAlignment = Enum.VerticalAlignment.Center, SortOrder = Enum.SortOrder.LayoutOrder,
+		}),
 	})
-	CloseBtn.MouseEnter:Connect(function() tween(CloseBtn, { TextColor3 = Theme.Ink }, 0.12) end)
-	CloseBtn.MouseLeave:Connect(function() tween(CloseBtn, { TextColor3 = Theme.Muted }, 0.12) end)
-	CloseBtn.MouseButton1Click:Connect(function() Main.Visible = false end)
+
+	local function controlBtn(symbol, hoverColor)
+		local b = new("TextButton", {
+			Text = symbol, Font = Enum.Font.GothamBold, TextSize = 13, TextColor3 = Theme.Muted,
+			BackgroundColor3 = Theme.Panel2, Size = UDim2.new(0, 24, 0, 24), Parent = Controls,
+		}, { corner(7), stroke(Theme.Line, 1, 0.88) })
+		b.MouseEnter:Connect(function() tween(b, { TextColor3 = hoverColor }, 0.12) end)
+		b.MouseLeave:Connect(function() tween(b, { TextColor3 = Theme.Muted }, 0.12) end)
+		return b
+	end
+
+	local MinBtn = controlBtn("–", Theme.Accent)
+	local MaxBtn = controlBtn("○", Theme.Accent)
+	local CloseBtn = controlBtn("×", Color3.fromRGB(255, 96, 96))
+
+	-- small floating bubble that reopens the panel after it's closed, so the
+	-- user never has to re-execute the script just to bring it back
+	local Reopen = new("TextButton", {
+		Text = "", Visible = false, BackgroundTransparency = 1, BackgroundColor3 = Theme.Panel,
+		AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 24, 1, -24),
+		Size = UDim2.new(0, 46, 0, 46), Parent = ScreenGui,
+	}, { corner(23), stroke(Theme.Line, 1, 0.8) })
+	local ReopenGlyph = new("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, 0), Size = UDim2.new(0, 18, 0, 18), Parent = Reopen,
+	}, { corner(5) })
+	bindAccent(ReopenGlyph)
+	makeDraggable(Reopen, Reopen)
+
+	MinBtn.MouseButton1Click:Connect(function()
+		if isMaximized then
+			isMaximized = false
+			Main.Size = originalSize
+			Main.Position = originalPos
+		end
+		isMinimized = not isMinimized
+		Sidebar.Visible = not isMinimized
+		ContentHolder.Visible = not isMinimized
+		tween(Main, { Size = isMinimized and UDim2.new(originalSize.X.Scale, originalSize.X.Offset, 0, 54) or originalSize }, 0.2)
+	end)
+
+	MaxBtn.MouseButton1Click:Connect(function()
+		if isMinimized then
+			isMinimized = false
+			Sidebar.Visible = true
+			ContentHolder.Visible = true
+		end
+		isMaximized = not isMaximized
+		if isMaximized then
+			tween(Main, { Size = UDim2.new(0.94, 0, 0.9, 0), Position = UDim2.new(0.03, 0, 0.05, 0) }, 0.22)
+		else
+			tween(Main, { Size = originalSize, Position = originalPos }, 0.22)
+		end
+	end)
+
+	CloseBtn.MouseButton1Click:Connect(function()
+		Main.Visible = false
+		Reopen.Visible = true
+		Reopen.BackgroundTransparency = 1
+		tween(Reopen, { BackgroundTransparency = 0.05 }, 0.2)
+	end)
+
+	Reopen.MouseButton1Click:Connect(function()
+		Main.Visible = true
+		tween(Reopen, { BackgroundTransparency = 1 }, 0.15)
+		task.delay(0.15, function() Reopen.Visible = false end)
+	end)
 
 	makeDraggable(TopBar, Main)
 
 	new("Frame", { BackgroundColor3 = Theme.Line, BackgroundTransparency = 0.92, Size = UDim2.new(1, 0, 0, 1), Position = UDim2.new(0, 0, 0, 54), Parent = Main })
 
-	local Sidebar = new("Frame", {
+	Sidebar = new("Frame", {
 		BackgroundTransparency = 1, Position = UDim2.new(0, 0, 0, 55), Size = UDim2.new(0, 150, 1, -55), Parent = Main,
 	}, { pad(12, 12, 12, 12), new("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder }) })
 
 	new("Frame", { BackgroundColor3 = Theme.Line, BackgroundTransparency = 0.92, Size = UDim2.new(0, 1, 1, -55), Position = UDim2.new(0, 150, 0, 55), Parent = Main })
 
-	local ContentHolder = new("Frame", { BackgroundTransparency = 1, Position = UDim2.new(0, 151, 0, 55), Size = UDim2.new(1, -151, 1, -55), Parent = Main })
+	ContentHolder = new("Frame", { BackgroundTransparency = 1, Position = UDim2.new(0, 151, 0, 55), Size = UDim2.new(1, -151, 1, -55), Parent = Main })
 
 	Window.Main, Window.Sidebar, Window.ContentHolder = Main, Sidebar, ContentHolder
 
