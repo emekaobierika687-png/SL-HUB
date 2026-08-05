@@ -1,14 +1,23 @@
 --[[
 	SlickUI — Dark, glassy UI library for Roblox
 	Styled like Speed Hub X
+	WITH DEBUGGING
 ]]
+
+-- DEBUG: Print when library starts loading
+print("[SlickUI] Library loading started...")
 
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
+
+print("[SlickUI] Services loaded")
 
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
+
+print("[SlickUI] Player GUI found")
 
 -- ===================== THEME =====================
 
@@ -29,6 +38,8 @@ local Theme = {
 	Orange    = Color3.fromRGB(255, 160, 0),
 	Accent    = Color3.fromRGB(0, 150, 255),
 }
+
+print("[SlickUI] Theme loaded")
 
 -- ===================== HELPERS =====================
 
@@ -104,16 +115,34 @@ local function makeDraggable(handle, target)
 	end)
 end
 
+print("[SlickUI] Helpers loaded")
+
 -- ===================== ROOT =====================
 
 local SlickUI = {}
 
-local ScreenGui = new("ScreenGui", {
-	Name = "SlickUI",
-	ResetOnSpawn = false,
-	ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
-	Parent = PlayerGui,
-})
+print("[SlickUI] SlickUI table created")
+
+-- Create ScreenGui safely with pcall
+local success, ScreenGui = pcall(function()
+	local gui = new("ScreenGui", {
+		Name = "SlickUI",
+		ResetOnSpawn = false,
+		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+		Parent = PlayerGui,
+	})
+	print("[SlickUI] ScreenGui created successfully")
+	return gui
+end)
+
+if not success then
+	print("[SlickUI] ERROR creating ScreenGui:", ScreenGui)
+	ScreenGui = Instance.new("ScreenGui")
+	ScreenGui.Name = "SlickUI"
+	ScreenGui.ResetOnSpawn = false
+	ScreenGui.Parent = PlayerGui
+	print("[SlickUI] ScreenGui created with fallback method")
+end
 
 local NotifHolder = new("Frame", {
 	Name = "Notifications",
@@ -130,6 +159,8 @@ local NotifHolder = new("Frame", {
 		SortOrder = Enum.SortOrder.LayoutOrder,
 	}),
 })
+
+print("[SlickUI] Notifications holder created")
 
 function SlickUI:Notify(opts)
 	opts = opts or {}
@@ -188,9 +219,13 @@ function SlickUI:Notify(opts)
 	end)
 end
 
+print("[SlickUI] Notify function defined")
+
 -- ===================== WINDOW =====================
 
 function SlickUI:CreateWindow(title, options)
+	print("[SlickUI] CreateWindow called with title:", title)
+	
 	options = options or {}
 	local isFullscreen = options.Fullscreen or false
 	local logoUrl = options.Logo or ""
@@ -208,6 +243,8 @@ function SlickUI:CreateWindow(title, options)
 	local sidebarWidth = isFullscreen and 200 or 180
 	local cornerRadius = isFullscreen and 0 or 12
 
+	print("[SlickUI] Creating main frame...")
+	
 	local Main = new("Frame", {
 		Name = "Main",
 		BackgroundColor3 = Theme.Bg,
@@ -223,6 +260,8 @@ function SlickUI:CreateWindow(title, options)
 			Rotation = 135,
 		}),
 	})
+
+	print("[SlickUI] Main frame created")
 
 	-- Top bar
 	local TopBar = new("Frame", {
@@ -335,6 +374,8 @@ function SlickUI:CreateWindow(title, options)
 	CloseBtn.MouseLeave:Connect(function() tween(CloseBtn, { TextColor3 = Theme.Muted }, 0.12) end)
 	CloseBtn.MouseButton1Click:Connect(function() Main.Visible = false end)
 
+	print("[SlickUI] Top bar created")
+
 	-- State tracking
 	local isCollapsed = false
 	local isFullscreenState = isFullscreen
@@ -424,6 +465,8 @@ function SlickUI:CreateWindow(title, options)
 		Parent = Main,
 	})
 
+	print("[SlickUI] Window structure created")
+
 	Window.Main = Main
 	Window.Sidebar = Sidebar
 	Window.ContentHolder = ContentHolder
@@ -440,6 +483,8 @@ function SlickUI:CreateWindow(title, options)
 	end
 
 	function Window:CreateTab(name)
+		print("[SlickUI] Creating tab:", name)
+		
 		local Tab = {}
 		Tab.Name = name
 
@@ -992,11 +1037,15 @@ function SlickUI:CreateWindow(title, options)
 			}
 		end
 
+		print("[SlickUI] Tab created successfully:", name)
 		return Tab
 	end
 
+	print("[SlickUI] Window created successfully")
 	return Window
 end
+
+print("[SlickUI] Library fully loaded!")
 
 -- IMPORTANT: Return the library
 return SlickUI
