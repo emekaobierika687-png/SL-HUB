@@ -815,7 +815,7 @@ function SlickUI:CreateWindow(title, options)
 
 			Box.FocusLost:Connect(function()
 				if callback then callback(Box.Text) end
-			})
+			end) -- FIXED: was `})` now `end)`
 
 			return { 
 				Set = function(v) Box.Text = tostring(v) end,
