@@ -1,19 +1,6 @@
 --[[
 	SlickUI — Dark, glassy UI library for Roblox
 	Styled like Speed Hub X
-	
-	USAGE:
-		local SlickUI = loadstring(game:HttpGet("..."))()
-		local Window = SlickUI:CreateWindow('Speed Hub X', {
-			Logo = 'image_url',
-			Fullscreen = true,
-			Version = '4.0.4'
-		})
-		local Tab = Window:CreateTab('Home')
-		Tab:CreateSection('Main')
-		Tab:CreateButton('Button Text', function() end)
-		Tab:CreateToggle('Toggle Text', function(state) end)
-		-- etc...
 ]]
 
 local TweenService = game:GetService("TweenService")
@@ -121,7 +108,6 @@ end
 -- ===================== ROOT =====================
 
 local SlickUI = {}
-SlickUI.__index = SlickUI
 
 local ScreenGui = new("ScreenGui", {
 	Name = "SlickUI",
@@ -211,7 +197,7 @@ function SlickUI:CreateWindow(title, options)
 	local logoUrl = options.Logo or ""
 	local version = options.Version or "1.0.0"
 
-	local Window = setmetatable({}, SlickUI)
+	local Window = {}
 	Window.Tabs = {}
 	Window.TabObjects = {}
 	Window.IsFullscreen = isFullscreen
@@ -863,163 +849,163 @@ function SlickUI:CreateWindow(title, options)
 				TextColor3 = Theme.Ink,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				Size = UDim2.new(0.5, 0, 1, 0),
-				Parent = Head,
-			})
+					Parent = Head,
+				})
 
-			local SelLabel = new("TextLabel", {
-				BackgroundTransparency = 1,
-				Text = tostring(selected),
-				Font = Enum.Font.Gotham,
-				TextSize = 12,
-				TextColor3 = Theme.Muted,
-				TextXAlignment = Enum.TextXAlignment.Right,
-				AnchorPoint = Vector2.new(1, 0),
-				Position = UDim2.new(1, 0, 0, 0),
-				Size = UDim2.new(0.5, 0, 1, 0),
-				Parent = Head,
-			})
-
-			local Arrow = new("TextLabel", {
-				BackgroundTransparency = 1,
-				Text = "▼",
-				Font = Enum.Font.Gotham,
-				TextSize = 12,
-				TextColor3 = Theme.Dim,
-				TextXAlignment = Enum.TextXAlignment.Right,
-				AnchorPoint = Vector2.new(1, 0.5),
-				Position = UDim2.new(1, -8, 0.5, 0),
-				Size = UDim2.new(0, 20, 1, 0),
-				Parent = Head,
-			})
-
-			local List = new("Frame", {
-				BackgroundTransparency = 1,
-				Position = UDim2.new(0, 0, 0, 42),
-				Size = UDim2.new(1, 0, 0, #options * 28),
-				Parent = Row,
-			}, {
-				pad(14, 4, 14, 8),
-				new("UIListLayout", { Padding = UDim.new(0, 2), SortOrder = Enum.SortOrder.LayoutOrder }),
-			})
-
-			for _, opt in ipairs(options) do
-				local OptBtn = new("TextButton", {
-					Text = tostring(opt),
+				local SelLabel = new("TextLabel", {
+					BackgroundTransparency = 1,
+					Text = tostring(selected),
 					Font = Enum.Font.Gotham,
 					TextSize = 12,
 					TextColor3 = Theme.Muted,
-					TextXAlignment = Enum.TextXAlignment.Left,
-					BackgroundTransparency = 1,
-					Size = UDim2.new(1, 0, 0, 24),
-					Parent = List,
+					TextXAlignment = Enum.TextXAlignment.Right,
+					AnchorPoint = Vector2.new(1, 0),
+					Position = UDim2.new(1, 0, 0, 0),
+					Size = UDim2.new(0.5, 0, 1, 0),
+					Parent = Head,
 				})
-				OptBtn.MouseButton1Click:Connect(function()
-					selected = opt
-					SelLabel.Text = tostring(opt)
-					open = false
-					tween(Row, { Size = UDim2.new(1, 0, 0, 42) }, 0.15)
-					tween(Arrow, { Text = "▼" }, 0.15)
-					if callback then callback(opt) end
+
+				local Arrow = new("TextLabel", {
+					BackgroundTransparency = 1,
+					Text = "▼",
+					Font = Enum.Font.Gotham,
+					TextSize = 12,
+					TextColor3 = Theme.Dim,
+					TextXAlignment = Enum.TextXAlignment.Right,
+					AnchorPoint = Vector2.new(1, 0.5),
+					Position = UDim2.new(1, -8, 0.5, 0),
+					Size = UDim2.new(0, 20, 1, 0),
+					Parent = Head,
+				})
+
+				local List = new("Frame", {
+					BackgroundTransparency = 1,
+					Position = UDim2.new(0, 0, 0, 42),
+					Size = UDim2.new(1, 0, 0, #options * 28),
+					Parent = Row,
+				}, {
+					pad(14, 4, 14, 8),
+					new("UIListLayout", { Padding = UDim.new(0, 2), SortOrder = Enum.SortOrder.LayoutOrder }),
+				})
+
+				for _, opt in ipairs(options) do
+					local OptBtn = new("TextButton", {
+						Text = tostring(opt),
+						Font = Enum.Font.Gotham,
+						TextSize = 12,
+						TextColor3 = Theme.Muted,
+						TextXAlignment = Enum.TextXAlignment.Left,
+						BackgroundTransparency = 1,
+						Size = UDim2.new(1, 0, 0, 24),
+						Parent = List,
+					})
+					OptBtn.MouseButton1Click:Connect(function()
+						selected = opt
+						SelLabel.Text = tostring(opt)
+						open = false
+						tween(Row, { Size = UDim2.new(1, 0, 0, 42) }, 0.15)
+						tween(Arrow, { Text = "▼" }, 0.15)
+						if callback then callback(opt) end
+					end)
+					OptBtn.MouseEnter:Connect(function() tween(OptBtn, { TextColor3 = Theme.Ink }, 0.1) end)
+					OptBtn.MouseLeave:Connect(function() tween(OptBtn, { TextColor3 = Theme.Muted }, 0.1) end)
+				end
+
+				Head.MouseButton1Click:Connect(function()
+					open = not open
+					tween(Row, { Size = UDim2.new(1, 0, 0, open and (42 + #options * 28) or 42) }, 0.15)
+					tween(Arrow, { Text = open and "▲" or "▼" }, 0.15)
 				end)
-				OptBtn.MouseEnter:Connect(function() tween(OptBtn, { TextColor3 = Theme.Ink }, 0.1) end)
-				OptBtn.MouseLeave:Connect(function() tween(OptBtn, { TextColor3 = Theme.Muted }, 0.1) end)
+
+				return { 
+					Set = function(v) 
+						selected = v
+						SelLabel.Text = tostring(v)
+						if callback then callback(v) end
+					end,
+					Get = function() return selected end
+				}
 			end
 
-			Head.MouseButton1Click:Connect(function()
-				open = not open
-				tween(Row, { Size = UDim2.new(1, 0, 0, open and (42 + #options * 28) or 42) }, 0.15)
-				tween(Arrow, { Text = open and "▲" or "▼" }, 0.15)
-			end)
+			-- Speed Hub X style color picker
+			function Tab:CreateColorPicker(text, callback)
+				local state = Color3.fromRGB(0, 120, 255)
 
-			return { 
-				Set = function(v) 
-					selected = v
-					SelLabel.Text = tostring(v)
-					if callback then callback(v) end
-				end,
-				Get = function() return selected end
-			}
+				local Row = new("Frame", {
+					BackgroundColor3 = Theme.Panel2,
+					BackgroundTransparency = 0.3,
+					Size = UDim2.new(1, 0, 0, 42),
+					Parent = Page,
+				}, { 
+					corner(8), 
+					stroke(Theme.Line, 1, 0.7),
+					pad(14, 0, 14, 0) 
+				})
+
+				new("TextLabel", {
+					BackgroundTransparency = 1,
+					Text = text or "Color Picker",
+					Font = Enum.Font.Gotham,
+					TextSize = 13,
+					TextColor3 = Theme.Ink,
+					TextXAlignment = Enum.TextXAlignment.Left,
+					Size = UDim2.new(1, -50, 1, 0),
+					Parent = Row,
+				})
+
+				local ColorDisplay = new("Frame", {
+					BackgroundColor3 = state,
+					AnchorPoint = Vector2.new(1, 0.5),
+					Position = UDim2.new(1, 0, 0.5, 0),
+					Size = UDim2.new(0, 30, 0, 30),
+					Parent = Row,
+				}, { 
+					corner(8), 
+					stroke(Theme.Line, 1, 0.5) 
+				})
+
+				local pickerBtn = new("TextButton", {
+					BackgroundTransparency = 1,
+					Text = "",
+					Size = UDim2.new(1, 0, 1, 0),
+					Parent = Row,
+				})
+
+				local colors = {
+					Color3.fromRGB(0, 120, 255),
+					Color3.fromRGB(255, 60, 60),
+					Color3.fromRGB(0, 220, 120),
+					Color3.fromRGB(255, 160, 0),
+					Color3.fromRGB(255, 0, 255),
+					Color3.fromRGB(0, 255, 255),
+					Color3.fromRGB(255, 255, 255),
+					Color3.fromRGB(128, 0, 255),
+					Color3.fromRGB(255, 192, 203),
+				}
+				local colorIndex = 1
+
+				pickerBtn.MouseButton1Click:Connect(function()
+					colorIndex = colorIndex % #colors + 1
+					state = colors[colorIndex]
+					ColorDisplay.BackgroundColor3 = state
+					if callback then callback(state) end
+				end)
+
+				return { 
+					Set = function(v) 
+						state = v
+						ColorDisplay.BackgroundColor3 = v
+						if callback then callback(v) end
+					end,
+					Get = function() return state end
+				}
+			end
+
+			return Tab
 		end
 
-		-- Speed Hub X style color picker
-		function Tab:CreateColorPicker(text, callback)
-			local state = Color3.fromRGB(0, 120, 255)
-
-			local Row = new("Frame", {
-				BackgroundColor3 = Theme.Panel2,
-				BackgroundTransparency = 0.3,
-				Size = UDim2.new(1, 0, 0, 42),
-				Parent = Page,
-			}, { 
-				corner(8), 
-				stroke(Theme.Line, 1, 0.7),
-				pad(14, 0, 14, 0) 
-			})
-
-			new("TextLabel", {
-				BackgroundTransparency = 1,
-				Text = text or "Color Picker",
-				Font = Enum.Font.Gotham,
-				TextSize = 13,
-				TextColor3 = Theme.Ink,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				Size = UDim2.new(1, -50, 1, 0),
-				Parent = Row,
-			})
-
-			local ColorDisplay = new("Frame", {
-				BackgroundColor3 = state,
-				AnchorPoint = Vector2.new(1, 0.5),
-				Position = UDim2.new(1, 0, 0.5, 0),
-				Size = UDim2.new(0, 30, 0, 30),
-				Parent = Row,
-			}, { 
-				corner(8), 
-				stroke(Theme.Line, 1, 0.5) 
-			})
-
-			local pickerBtn = new("TextButton", {
-				BackgroundTransparency = 1,
-				Text = "",
-				Size = UDim2.new(1, 0, 1, 0),
-				Parent = Row,
-			})
-
-			local colors = {
-				Color3.fromRGB(0, 120, 255),
-				Color3.fromRGB(255, 60, 60),
-				Color3.fromRGB(0, 220, 120),
-				Color3.fromRGB(255, 160, 0),
-				Color3.fromRGB(255, 0, 255),
-				Color3.fromRGB(0, 255, 255),
-				Color3.fromRGB(255, 255, 255),
-				Color3.fromRGB(128, 0, 255),
-				Color3.fromRGB(255, 192, 203),
-			}
-			local colorIndex = 1
-
-			pickerBtn.MouseButton1Click:Connect(function()
-				colorIndex = colorIndex % #colors + 1
-				state = colors[colorIndex]
-				ColorDisplay.BackgroundColor3 = state
-				if callback then callback(state) end
-			end)
-
-			return { 
-				Set = function(v) 
-					state = v
-					ColorDisplay.BackgroundColor3 = v
-					if callback then callback(v) end
-				end,
-				Get = function() return state end
-			}
-		end
-
-		return Tab
+		return Window
 	end
 
-	return Window
-end
-
--- Make sure the library returns itself
-return SlickUI
+	-- Return the library
+	return SlickUI
