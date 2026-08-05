@@ -443,6 +443,7 @@ function SlickUI:CreateWindow(title, options)
 	Window.Sidebar = Sidebar
 	Window.ContentHolder = ContentHolder
 	Window.TopBar = TopBar
+	Window.ScreenGui = ScreenGui
 
 	function Window:SetLogo(url)
 		LogoImage.Image = url
@@ -1020,4 +1021,5 @@ function SlickUI:CreateWindow(title, options)
 	return Window
 end
 
+-- Make sure the library returns itself
 return SlickUI
