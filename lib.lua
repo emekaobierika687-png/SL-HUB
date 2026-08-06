@@ -28,19 +28,145 @@ local Theme = {
 	Blue      = Color3.fromRGB(0, 120, 255),
 	BlueHover = Color3.fromRGB(30, 150, 255),
 	BlueDark  = Color3.fromRGB(0, 80, 200),
-	Bg        = Color3.fromRGB(10, 10, 15),
-	Panel     = Color3.fromRGB(18, 18, 28),
-	Panel2    = Color3.fromRGB(25, 25, 38),
-	Panel3    = Color3.fromRGB(35, 35, 50),
+	Bg        = Color3.fromRGB(12, 8, 9),
+	Panel     = Color3.fromRGB(22, 14, 15),
+	Panel2    = Color3.fromRGB(30, 17, 18),
+	Panel3    = Color3.fromRGB(40, 20, 21),
 	Ink       = Color3.fromRGB(255, 255, 255),
-	Muted     = Color3.fromRGB(160, 160, 180),
-	Dim       = Color3.fromRGB(100, 100, 120),
-	Line      = Color3.fromRGB(60, 60, 80),
+	Muted     = Color3.fromRGB(190, 160, 162),
+	Dim       = Color3.fromRGB(130, 100, 102),
+	Line      = Color3.fromRGB(80, 35, 38),
 	Green     = Color3.fromRGB(0, 220, 120),
 	Red       = Color3.fromRGB(255, 60, 60),
 	Orange    = Color3.fromRGB(255, 160, 0),
-	Accent    = Color3.fromRGB(0, 150, 255),
+	Accent      = Color3.fromRGB(220, 30, 45),
+	AccentHover = Color3.fromRGB(250, 50, 65),
+	AccentDark  = Color3.fromRGB(160, 15, 28),
 }
+
+-- ===================== THEME PRESETS =====================
+-- Named presets people can switch to. "Bg/Panel/Panel2/Panel3/Line" are
+-- dark neutral tones tinted toward the accent hue; "White" is the one
+-- light-mode preset and flips Ink/Muted so text stays readable.
+local ThemePresets = {
+	Red = {
+		Bg = Color3.fromRGB(12, 8, 9), Panel = Color3.fromRGB(22, 14, 15),
+		Panel2 = Color3.fromRGB(30, 17, 18), Panel3 = Color3.fromRGB(40, 20, 21),
+		Line = Color3.fromRGB(80, 35, 38), Muted = Color3.fromRGB(190, 160, 162),
+		Dim = Color3.fromRGB(130, 100, 102), Ink = Color3.fromRGB(255, 255, 255),
+		Accent = Color3.fromRGB(220, 30, 45), AccentHover = Color3.fromRGB(250, 50, 65),
+		AccentDark = Color3.fromRGB(160, 15, 28),
+	},
+	Purple = {
+		Bg = Color3.fromRGB(10, 8, 14), Panel = Color3.fromRGB(19, 15, 26),
+		Panel2 = Color3.fromRGB(25, 19, 34), Panel3 = Color3.fromRGB(33, 24, 45),
+		Line = Color3.fromRGB(65, 45, 90), Muted = Color3.fromRGB(175, 160, 195),
+		Dim = Color3.fromRGB(115, 100, 140), Ink = Color3.fromRGB(255, 255, 255),
+		Accent = Color3.fromRGB(140, 60, 230), AccentHover = Color3.fromRGB(165, 90, 245),
+		AccentDark = Color3.fromRGB(95, 35, 165),
+	},
+	Blue = {
+		Bg = Color3.fromRGB(8, 10, 14), Panel = Color3.fromRGB(15, 18, 26),
+		Panel2 = Color3.fromRGB(20, 24, 34), Panel3 = Color3.fromRGB(27, 32, 45),
+		Line = Color3.fromRGB(40, 55, 90), Muted = Color3.fromRGB(160, 175, 195),
+		Dim = Color3.fromRGB(100, 115, 140), Ink = Color3.fromRGB(255, 255, 255),
+		Accent = Color3.fromRGB(0, 130, 255), AccentHover = Color3.fromRGB(40, 160, 255),
+		AccentDark = Color3.fromRGB(0, 85, 190),
+	},
+	Green = {
+		Bg = Color3.fromRGB(8, 12, 10), Panel = Color3.fromRGB(15, 22, 18),
+		Panel2 = Color3.fromRGB(19, 29, 23), Panel3 = Color3.fromRGB(25, 38, 30),
+		Line = Color3.fromRGB(35, 80, 50), Muted = Color3.fromRGB(160, 190, 170),
+		Dim = Color3.fromRGB(100, 130, 110), Ink = Color3.fromRGB(255, 255, 255),
+		Accent = Color3.fromRGB(0, 200, 110), AccentHover = Color3.fromRGB(30, 225, 135),
+		AccentDark = Color3.fromRGB(0, 140, 75),
+	},
+	Black = {
+		Bg = Color3.fromRGB(8, 8, 8), Panel = Color3.fromRGB(15, 15, 15),
+		Panel2 = Color3.fromRGB(20, 20, 20), Panel3 = Color3.fromRGB(28, 28, 28),
+		Line = Color3.fromRGB(50, 50, 50), Muted = Color3.fromRGB(170, 170, 170),
+		Dim = Color3.fromRGB(110, 110, 110), Ink = Color3.fromRGB(255, 255, 255),
+		Accent = Color3.fromRGB(255, 255, 255), AccentHover = Color3.fromRGB(220, 220, 220),
+		AccentDark = Color3.fromRGB(150, 150, 150),
+	},
+	White = {
+		Bg = Color3.fromRGB(245, 245, 248), Panel = Color3.fromRGB(255, 255, 255),
+		Panel2 = Color3.fromRGB(238, 238, 242), Panel3 = Color3.fromRGB(225, 225, 230),
+		Line = Color3.fromRGB(210, 210, 216), Muted = Color3.fromRGB(90, 90, 100),
+		Dim = Color3.fromRGB(140, 140, 150), Ink = Color3.fromRGB(20, 20, 25),
+		Accent = Color3.fromRGB(30, 30, 30), AccentHover = Color3.fromRGB(60, 60, 60),
+		AccentDark = Color3.fromRGB(0, 0, 0),
+	},
+}
+
+-- Given any accent Color3, derive a full dark-mode palette around it.
+-- Used when someone passes a raw color instead of a preset name.
+local function deriveThemeFromColor(accent)
+	local h, s, v = accent:ToHSV()
+	local function hsv(hh, ss, vv)
+		return Color3.fromHSV(hh % 1, math.clamp(ss, 0, 1), math.clamp(vv, 0, 1))
+	end
+	return {
+		Bg = hsv(h, math.min(s, 0.25), 0.04),
+		Panel = hsv(h, math.min(s, 0.3), 0.08),
+		Panel2 = hsv(h, math.min(s, 0.3), 0.11),
+		Panel3 = hsv(h, math.min(s, 0.3), 0.15),
+		Line = hsv(h, math.min(s, 0.55), 0.32),
+		Muted = hsv(h, math.min(s, 0.15), 0.72),
+		Dim = hsv(h, math.min(s, 0.15), 0.5),
+		Ink = Color3.fromRGB(255, 255, 255),
+		Accent = accent,
+		AccentHover = hsv(h, s, math.min(v + 0.15, 1)),
+		AccentDark = hsv(h, s, math.max(v - 0.25, 0)),
+	}
+end
+
+
+-- Exposed so users can extend/replace it, e.g.:
+--   for k, v in pairs(myIconPack) do SlickUI.Icons[k] = v end
+-- This built-in table is intentionally small — it's just a starter set.
+-- Anything not found here falls back to being rendered as raw text,
+-- which is exactly what you want for emoji icons like "🏠" or "⚙️" anyway.
+local Icons = {
+	home        = "rbxassetid://10723407389",
+	settings    = "rbxassetid://10734950309",
+	box         = "rbxassetid://10723407587",
+	search      = "rbxassetid://10734943158",
+	star        = "rbxassetid://10734949864",
+	heart       = "rbxassetid://10734896206",
+	user        = "rbxassetid://10734953705",
+	folder      = "rbxassetid://10734923687",
+	trash       = "rbxassetid://10747370946",
+	info        = "rbxassetid://10734884756",
+	bell        = "rbxassetid://10723347607",
+	lock        = "rbxassetid://10723420531",
+	shield      = "rbxassetid://10734945216",
+	crystal     = "rbxassetid://10734855444",
+	rebirth     = "rbxassetid://10734953705",
+	killer      = "rbxassetid://11337391309",
+	misc        = "rbxassetid://10723365810",
+}
+
+-- Returns "image", assetIdString  OR  "text", rawString  OR  nil if no icon given
+local function resolveIcon(icon)
+	if type(icon) ~= "string" or icon == "" then
+		return nil, nil
+	end
+	-- Direct asset reference
+	if icon:match("^rbxassetid://") or icon:match("^rbxthumb://") or icon:match("^https?://") then
+		return "image", icon
+	end
+	-- Named lookup (case-insensitive). Supports both the shorthand form
+	-- ("box") and the full Lucide-style key ("lucide-box") so you can
+	-- merge in a big icon pack and call it either way.
+	local key = icon:lower()
+	local lookup = Icons[key] or Icons["lucide-" .. key]
+	if lookup then
+		return "image", lookup
+	end
+	-- Fall back to raw text — this is what makes emoji ("🏠") just work
+	return "text", icon
+end
 
 -- ===================== HELPERS =====================
 
@@ -87,6 +213,27 @@ local function tween(inst, props, time, style, dir)
 	return tweenObj
 end
 
+-- Adds a subtle hover glow to a row: the row's background gets slightly
+-- more opaque and its border brightens toward the accent color. Pass the
+-- element that should listen for the mouse (often the row itself, or an
+-- invisible click-catcher button layered over it) and the row + its
+-- UIStroke to animate.
+local function addRowHover(listener, row, strokeInst, baseTransparency)
+	baseTransparency = baseTransparency or 0.3
+	listener.MouseEnter:Connect(function()
+		tween(row, { BackgroundTransparency = math.max(baseTransparency - 0.15, 0) }, 0.15)
+		if strokeInst then
+			tween(strokeInst, { Transparency = 0.35, Color = Theme.Accent }, 0.15)
+		end
+	end)
+	listener.MouseLeave:Connect(function()
+		tween(row, { BackgroundTransparency = baseTransparency }, 0.15)
+		if strokeInst then
+			tween(strokeInst, { Transparency = 0.7, Color = Theme.Line }, 0.15)
+		end
+	end)
+end
+
 local function makeDraggable(handle, target)
 	local dragging = false
 	local dragStart = nil
@@ -119,6 +266,88 @@ end
 -- ===================== ROOT =====================
 
 local SlickUI = {}
+SlickUI.Icons = Icons
+SlickUI.ThemePresets = ThemePresets
+
+-- Change the color theme. Accepts:
+--   A preset name:  SlickUI:SetTheme("Purple")   -- "Red","Purple","Blue","Green","Black","White"
+--   A raw color:    SlickUI:SetTheme(Color3.fromRGB(255, 140, 0))  -- full palette auto-derived
+--   A table:        SlickUI:SetTheme({ Accent = Color3.fromRGB(...), Bg = Color3.fromRGB(...) })
+-- Mutates the shared Theme table in place, so call this BEFORE CreateWindow
+-- (or pass Theme = "..." / Theme = Color3... directly into CreateWindow's
+-- options table, which calls this for you at the right time).
+function SlickUI:SetTheme(themeInput)
+	local resolved
+	if typeof(themeInput) == "Color3" then
+		resolved = deriveThemeFromColor(themeInput)
+	elseif type(themeInput) == "string" then
+		resolved = ThemePresets[themeInput]
+		if not resolved then
+			-- Case-insensitive fallback match
+			for name, preset in pairs(ThemePresets) do
+				if name:lower() == themeInput:lower() then
+					resolved = preset
+					break
+				end
+			end
+		end
+		if not resolved then
+			warn("SlickUI:SetTheme - unknown preset '" .. themeInput .. "'. Available: Red, Purple, Blue, Green, Black, White")
+			return false
+		end
+	elseif type(themeInput) == "table" then
+		resolved = themeInput
+	else
+		warn("SlickUI:SetTheme expected a preset name, Color3, or table")
+		return false
+	end
+
+	for k, v in pairs(resolved) do
+		Theme[k] = v
+	end
+	return true
+end
+
+-- Merge an external icon pack (a plain table of name -> rbxassetid) into
+-- the built-in Icons table. Works with a table you already loaded:
+--   local pack = loadstring(game:HttpGet("URL_TO/asset.lua"))()
+--   SlickUI:LoadIconPack(pack)
+-- or pass a URL directly and let this fetch + merge it for you:
+--   SlickUI:LoadIconPack("https://raw.githubusercontent.com/you/repo/main/asset.lua")
+function SlickUI:LoadIconPack(packOrUrl)
+	local pack = packOrUrl
+	if type(packOrUrl) == "string" then
+		local ok, result = pcall(function()
+			return loadstring(game:HttpGet(packOrUrl))()
+		end)
+		if not ok then
+			warn("SlickUI:LoadIconPack failed to fetch/parse:", result)
+			return false
+		end
+		pack = result
+	end
+	if type(pack) ~= "table" then
+		warn("SlickUI:LoadIconPack expected a table, got:", type(pack))
+		return false
+	end
+	-- Some packs wrap their table like { assets = {...} } — unwrap if so
+	if type(pack.assets) == "table" then
+		pack = pack.assets
+	end
+	local count = 0
+	for k, v in pairs(pack) do
+		if type(k) == "string" and type(v) == "string" then
+			Icons[k:lower()] = v
+			count = count + 1
+		end
+	end
+	return true, count
+end
+
+-- Auto-load the built-in icon pack (1055+ Lucide icons) as soon as the
+-- library itself loads. This runs internally — nothing needs to be
+-- called from the loader script for icons to work.
+SlickUI:LoadIconPack("https://pastefy.app/e86T5YXs/raw")
 
 local ScreenGui = new("ScreenGui", {
 	Name = "SlickUI",
@@ -204,6 +433,9 @@ end
 
 function SlickUI:CreateWindow(title, options)
 	options = options or {}
+	if options.Theme then
+		SlickUI:SetTheme(options.Theme)
+	end
 	local isFullscreen = options.Fullscreen or false
 	local logoUrl = options.Logo or ""
 	local version = options.Version or "1.0.0"
@@ -243,13 +475,28 @@ function SlickUI:CreateWindow(title, options)
 		Parent = Main,
 	}, { pad(16, 0, 16, 0) })
 
-	-- Logo
-	local LogoContainer = new("Frame", {
+	-- Logo + Title + Version auto-flow left to right, no manual offset math
+	local HeaderGroup = new("Frame", {
 		BackgroundTransparency = 1,
 		AnchorPoint = Vector2.new(0, 0.5),
 		Position = UDim2.new(0, 0, 0.5, 0),
-		Size = UDim2.new(0, 36, 0, 36),
+		Size = UDim2.new(1, -90, 1, 0),
 		Parent = TopBar,
+	}, {
+		new("UIListLayout", {
+			FillDirection = Enum.FillDirection.Horizontal,
+			VerticalAlignment = Enum.VerticalAlignment.Center,
+			Padding = UDim.new(0, 10),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		}),
+	})
+
+	-- Logo
+	local LogoContainer = new("Frame", {
+		BackgroundTransparency = 1,
+		Size = UDim2.new(0, 36, 0, 36),
+		LayoutOrder = 1,
+		Parent = HeaderGroup,
 	})
 
 	local LogoImage = new("ImageLabel", {
@@ -266,8 +513,22 @@ function SlickUI:CreateWindow(title, options)
 		LogoImage.BackgroundTransparency = 0
 	end
 
-	-- Title
-	local titleOffset = logoUrl ~= "" and 46 or 0
+	-- Title + Version stack vertically together, sized to their text
+	local TitleGroup = new("Frame", {
+		BackgroundTransparency = 1,
+		AutomaticSize = Enum.AutomaticSize.X,
+		Size = UDim2.new(0, 0, 1, 0),
+		LayoutOrder = 2,
+		Parent = HeaderGroup,
+	}, {
+		new("UIListLayout", {
+			FillDirection = Enum.FillDirection.Horizontal,
+			VerticalAlignment = Enum.VerticalAlignment.Center,
+			Padding = UDim.new(0, 10),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		}),
+	})
+
 	local TitleLabel = new("TextLabel", {
 		BackgroundTransparency = 1,
 		Text = title or "SlickUI",
@@ -275,13 +536,12 @@ function SlickUI:CreateWindow(title, options)
 		TextSize = isFullscreen and 20 or 18,
 		TextColor3 = Theme.Ink,
 		TextXAlignment = Enum.TextXAlignment.Left,
-		AnchorPoint = Vector2.new(0, 0.5),
-		Position = UDim2.new(0, titleOffset, 0.5, 0),
-		Size = UDim2.new(0, 200, 1, 0),
-		Parent = TopBar,
+		AutomaticSize = Enum.AutomaticSize.X,
+		Size = UDim2.new(0, 0, 1, 0),
+		LayoutOrder = 1,
+		Parent = TitleGroup,
 	})
 
-	-- Version
 	local VersionLabel = new("TextLabel", {
 		BackgroundTransparency = 1,
 		Text = "Version : " .. version,
@@ -289,10 +549,10 @@ function SlickUI:CreateWindow(title, options)
 		TextSize = 11,
 		TextColor3 = Theme.Dim,
 		TextXAlignment = Enum.TextXAlignment.Left,
-		AnchorPoint = Vector2.new(0, 0.5),
-		Position = UDim2.new(0, titleOffset + 120, 0.5, 0),
-		Size = UDim2.new(0, 120, 1, 0),
-		Parent = TopBar,
+		AutomaticSize = Enum.AutomaticSize.X,
+		Size = UDim2.new(0, 0, 1, 0),
+		LayoutOrder = 2,
+		Parent = TitleGroup,
 	})
 
 	-- Control buttons
@@ -451,28 +711,76 @@ function SlickUI:CreateWindow(title, options)
 		end
 	end
 
-	function Window:CreateTab(name)
+	function Window:CreateTab(name, icon)
 		local Tab = {}
 		Tab.Name = name
 
+		local iconKind, iconValue = resolveIcon(icon)
+		local textOffset = iconKind and 30 or 0
+
 		local TabBtn = new("TextButton", {
+			Text = "",
+			BackgroundColor3 = Theme.Panel3,
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1, 0, 0, 36),
+			Parent = Sidebar,
+		}, { 
+			corner(6), 
+			new("UIStroke", {
+				Color = Theme.Line,
+				Thickness = 1,
+				Transparency = 1,
+			}),
+			new("Frame", {
+				Name = "AccentBar",
+				BackgroundColor3 = Theme.Accent,
+				BackgroundTransparency = 1,
+				AnchorPoint = Vector2.new(0, 0.5),
+				Position = UDim2.new(0, 0, 0.5, 0),
+				Size = UDim2.new(0, 3, 0, 16),
+			}, { corner(2) }),
+		})
+
+		if iconKind == "image" then
+			new("ImageLabel", {
+				Name = "Icon",
+				BackgroundTransparency = 1,
+				Image = iconValue,
+				ImageColor3 = Theme.Muted,
+				AnchorPoint = Vector2.new(0, 0.5),
+				Position = UDim2.new(0, 12, 0.5, 0),
+				Size = UDim2.new(0, 16, 0, 16),
+				Parent = TabBtn,
+			})
+		elseif iconKind == "text" then
+			-- Covers emoji ("🏠") and any unrecognized name string
+			new("TextLabel", {
+				Name = "Icon",
+				BackgroundTransparency = 1,
+				Text = iconValue,
+				Font = Enum.Font.GothamBold,
+				TextSize = 15,
+				TextColor3 = Theme.Muted,
+				TextXAlignment = Enum.TextXAlignment.Center,
+				AnchorPoint = Vector2.new(0, 0.5),
+				Position = UDim2.new(0, 12, 0.5, 0),
+				Size = UDim2.new(0, 18, 0, 18),
+				Parent = TabBtn,
+			})
+		end
+
+		local TabLabel = new("TextLabel", {
+			Name = "Label",
+			BackgroundTransparency = 1,
 			Text = name,
 			Font = Enum.Font.Gotham,
 			TextSize = 13,
 			TextColor3 = Theme.Muted,
 			TextXAlignment = Enum.TextXAlignment.Left,
-			BackgroundColor3 = Theme.Panel3,
-			BackgroundTransparency = 1,
-			Size = UDim2.new(1, 0, 0, 34),
-			Parent = Sidebar,
-		}, { 
-			corner(6), 
-			pad(12, 0, 12, 0),
-			new("UIStroke", {
-				Color = Theme.Line,
-				Thickness = 1,
-				Transparency = 1,
-			})
+			AnchorPoint = Vector2.new(0, 0.5),
+			Position = UDim2.new(0, 12 + textOffset, 0.5, 0),
+			Size = UDim2.new(1, -(24 + textOffset), 1, 0),
+			Parent = TabBtn,
 		})
 
 		local Page = new("ScrollingFrame", {
@@ -498,23 +806,50 @@ function SlickUI:CreateWindow(title, options)
 				t.Page.Visible = false
 				tween(t.Button, { 
 					BackgroundTransparency = 1, 
-					TextColor3 = Theme.Muted,
 					BackgroundColor3 = Theme.Panel3
 				}, 0.12)
 				local strokeObj = t.Button:FindFirstChild("UIStroke")
 				if strokeObj then
 					tween(strokeObj, { Transparency = 1 }, 0.12)
 				end
+				local bar = t.Button:FindFirstChild("AccentBar")
+				if bar then
+					tween(bar, { BackgroundTransparency = 1 }, 0.12)
+				end
+				local label = t.Button:FindFirstChild("Label")
+				if label then
+					tween(label, { TextColor3 = Theme.Muted }, 0.12)
+				end
+				local iconEl = t.Button:FindFirstChild("Icon")
+				if iconEl then
+					if iconEl:IsA("ImageLabel") then
+						tween(iconEl, { ImageColor3 = Theme.Muted }, 0.12)
+					else
+						tween(iconEl, { TextColor3 = Theme.Muted }, 0.12)
+					end
+				end
 			end
 			Page.Visible = true
 			tween(TabBtn, { 
-				BackgroundTransparency = 0.5,
-				TextColor3 = Theme.Ink,
-				BackgroundColor3 = Theme.Panel
+				BackgroundTransparency = 0.4,
+				BackgroundColor3 = Theme.AccentDark
 			}, 0.12)
 			local strokeObj = TabBtn:FindFirstChild("UIStroke")
 			if strokeObj then
-				tween(strokeObj, { Transparency = 0.5 }, 0.12)
+				tween(strokeObj, { Transparency = 0.7, Color = Theme.Accent }, 0.12)
+			end
+			local bar = TabBtn:FindFirstChild("AccentBar")
+			if bar then
+				tween(bar, { BackgroundTransparency = 0 }, 0.12)
+			end
+			tween(TabLabel, { TextColor3 = Theme.Ink }, 0.12)
+			local iconEl = TabBtn:FindFirstChild("Icon")
+			if iconEl then
+				if iconEl:IsA("ImageLabel") then
+					tween(iconEl, { ImageColor3 = Theme.Ink }, 0.12)
+				else
+					tween(iconEl, { TextColor3 = Theme.Ink }, 0.12)
+				end
 			end
 		end
 
@@ -526,28 +861,15 @@ function SlickUI:CreateWindow(title, options)
 		-- ============ COMPONENTS ============
 
 		function Tab:CreateSection(text)
-			new("Frame", {
-				BackgroundColor3 = Theme.Panel2,
-				BackgroundTransparency = 0.3,
-				Size = UDim2.new(1, 0, 0, 30),
+			new("TextLabel", {
+				BackgroundTransparency = 1,
+				Text = text,
+				Font = Enum.Font.GothamBold,
+				TextSize = 15,
+				TextColor3 = Theme.Ink,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				Size = UDim2.new(1, 0, 0, 24),
 				Parent = Page,
-			}, {
-				corner(6),
-				pad(12, 0, 12, 0),
-				new("TextLabel", {
-					BackgroundTransparency = 1,
-					Text = text,
-					Font = Enum.Font.GothamBold,
-					TextSize = 12,
-					TextColor3 = Theme.Muted,
-					TextXAlignment = Enum.TextXAlignment.Left,
-					Size = UDim2.new(1, 0, 1, 0),
-				}),
-				new("UIStroke", {
-					Color = Theme.Line,
-					Thickness = 1,
-					Transparency = 0.7,
-				})
 			})
 		end
 
@@ -604,7 +926,9 @@ function SlickUI:CreateWindow(title, options)
 
 		function Tab:CreateToggle(text, callback)
 			local state = false
+			local isUpdating = false
 
+			local RowStroke = stroke(Theme.Line, 1, 0.7)
 			local Row = new("Frame", {
 				BackgroundColor3 = Theme.Panel2,
 				BackgroundTransparency = 0.3,
@@ -612,7 +936,7 @@ function SlickUI:CreateWindow(title, options)
 				Parent = Page,
 			}, { 
 				corner(8), 
-				stroke(Theme.Line, 1, 0.7),
+				RowStroke,
 				pad(14, 0, 14, 0) 
 			})
 
@@ -646,17 +970,13 @@ function SlickUI:CreateWindow(title, options)
 				Parent = Track,
 			}, { corner(8) })
 
-			local click = new("TextButton", {
-				BackgroundTransparency = 1,
-				Text = "",
-				Size = UDim2.new(1, 0, 1, 0),
-				Parent = Row,
-			})
-
-			click.MouseButton1Click:Connect(function()
-				state = not state
+			local function updateToggle(newState)
+				if isUpdating then return end
+				isUpdating = true
+				
+				state = newState
 				if state then
-					tween(Track, { BackgroundColor3 = Theme.Green }, 0.15)
+					tween(Track, { BackgroundColor3 = Theme.Accent }, 0.15)
 					tween(Knob, { 
 						Position = UDim2.new(1, -19, 0.5, 0),
 						BackgroundColor3 = Theme.Ink
@@ -668,15 +988,32 @@ function SlickUI:CreateWindow(title, options)
 						BackgroundColor3 = Theme.Muted
 					}, 0.15)
 				end
+				
 				if callback then callback(state) end
+				isUpdating = false
+			end
+
+			local click = new("TextButton", {
+				BackgroundTransparency = 1,
+				Text = "",
+				Size = UDim2.new(1, 0, 1, 0),
+				Parent = Row,
+			})
+
+			click.MouseButton1Click:Connect(function()
+				updateToggle(not state)
 			end)
+
+			addRowHover(click, Row, RowStroke)
 
 			return { 
 				Set = function(v) 
-					state = v
-					click.MouseButton1Click:Fire()
+					updateToggle(v)
 				end,
-				Get = function() return state end
+				Get = function() return state end,
+				Toggle = function()
+					updateToggle(not state)
+				end
 			}
 		end
 
@@ -685,6 +1022,7 @@ function SlickUI:CreateWindow(title, options)
 			max = max or 100
 			local value = min
 
+			local RowStroke = stroke(Theme.Line, 1, 0.7)
 			local Row = new("Frame", {
 				BackgroundColor3 = Theme.Panel2,
 				BackgroundTransparency = 0.3,
@@ -692,9 +1030,10 @@ function SlickUI:CreateWindow(title, options)
 				Parent = Page,
 			}, { 
 				corner(8), 
-				stroke(Theme.Line, 1, 0.7),
+				RowStroke,
 				pad(14, 8, 14, 8) 
 			})
+			addRowHover(Row, Row, RowStroke)
 
 			local TitleLabel = new("TextLabel", {
 				BackgroundTransparency = 1,
@@ -772,6 +1111,7 @@ function SlickUI:CreateWindow(title, options)
 		end
 
 		function Tab:CreateBox(text, callback)
+			local RowStroke = stroke(Theme.Line, 1, 0.7)
 			local Row = new("Frame", {
 				BackgroundColor3 = Theme.Panel2,
 				BackgroundTransparency = 0.3,
@@ -779,9 +1119,10 @@ function SlickUI:CreateWindow(title, options)
 				Parent = Page,
 			}, { 
 				corner(8), 
-				stroke(Theme.Line, 1, 0.7),
+				RowStroke,
 				pad(14, 0, 14, 0) 
 			})
+			addRowHover(Row, Row, RowStroke)
 
 			new("TextLabel", {
 				BackgroundTransparency = 1,
@@ -794,6 +1135,7 @@ function SlickUI:CreateWindow(title, options)
 				Parent = Row,
 			})
 
+			local BoxStroke = stroke(Theme.Line, 1, 0.5)
 			local Box = new("TextBox", {
 				BackgroundColor3 = Theme.Panel3,
 				Font = Enum.Font.Gotham,
@@ -810,12 +1152,17 @@ function SlickUI:CreateWindow(title, options)
 			}, { 
 				corner(6), 
 				pad(10, 0, 10, 0),
-				stroke(Theme.Line, 1, 0.5)
+				BoxStroke
 			})
 
+			Box.Focused:Connect(function()
+				tween(BoxStroke, { Transparency = 0, Color = Theme.Accent }, 0.15)
+			end)
+
 			Box.FocusLost:Connect(function()
+				tween(BoxStroke, { Transparency = 0.5, Color = Theme.Line }, 0.15)
 				if callback then callback(Box.Text) end
-			end) -- FIXED: was `})` now `end)`
+			end)
 
 			return { 
 				Set = function(v) Box.Text = tostring(v) end,
@@ -827,6 +1174,11 @@ function SlickUI:CreateWindow(title, options)
 			local open = false
 			local selected = options[1] or ""
 
+			-- Cap the visible list to 6 rows; anything beyond scrolls internally
+			local visibleRows = math.min(#options, 6)
+			local listHeight = visibleRows * 28
+
+			local RowStroke = stroke(Theme.Line, 1, 0.7)
 			local Row = new("Frame", {
 				BackgroundColor3 = Theme.Panel2,
 				BackgroundTransparency = 0.3,
@@ -835,7 +1187,7 @@ function SlickUI:CreateWindow(title, options)
 				Parent = Page,
 			}, { 
 				corner(8), 
-				stroke(Theme.Line, 1, 0.7) 
+				RowStroke,
 			})
 
 			local Head = new("TextButton", {
@@ -844,6 +1196,7 @@ function SlickUI:CreateWindow(title, options)
 				Size = UDim2.new(1, 0, 0, 42),
 				Parent = Row,
 			}, { pad(14, 0, 14, 0) })
+			addRowHover(Head, Row, RowStroke)
 
 			new("TextLabel", {
 				BackgroundTransparency = 1,
@@ -882,10 +1235,15 @@ function SlickUI:CreateWindow(title, options)
 				Parent = Head,
 			})
 
-			local List = new("Frame", {
+			local List = new("ScrollingFrame", {
 				BackgroundTransparency = 1,
 				Position = UDim2.new(0, 0, 0, 42),
-				Size = UDim2.new(1, 0, 0, #options * 28),
+				Size = UDim2.new(1, 0, 0, listHeight),
+				CanvasSize = UDim2.new(0, 0, 0, 0),
+				AutomaticCanvasSize = Enum.AutomaticSize.Y,
+				ScrollBarThickness = 3,
+				ScrollBarImageColor3 = Theme.Accent,
+				ScrollBarImageTransparency = 0.3,
 				Parent = Row,
 			}, {
 				pad(14, 4, 14, 8),
@@ -1005,6 +1363,12 @@ function SlickUI:CreateWindow(title, options)
 		end
 
 		return Tab
+	end
+
+	-- Table-style API: Window:AddTab({ Title = "Main", Icon = "box" })
+	function Window:AddTab(props)
+		props = props or {}
+		return Window:CreateTab(props.Title or props.Name or "Tab", props.Icon)
 	end
 
 	return Window
