@@ -344,11 +344,6 @@ function SlickUI:LoadIconPack(packOrUrl)
 	return true, count
 end
 
--- Auto-load the built-in icon pack (1055+ Lucide icons) as soon as the
--- library itself loads. This runs internally — nothing needs to be
--- called from the loader script for icons to work.
-SlickUI:LoadIconPack("https://pastefy.app/e86T5YXs/raw")
-
 local ScreenGui = new("ScreenGui", {
 	Name = "SlickUI",
 	ResetOnSpawn = false,
@@ -371,6 +366,24 @@ local NotifHolder = new("Frame", {
 		SortOrder = Enum.SortOrder.LayoutOrder,
 	}),
 })
+
+-- Auto-load the built-in icon pack (1055+ Lucide icons) in the background.
+-- IMPORTANT: this runs in its own thread via task.spawn, AFTER the
+-- ScreenGui/NotifHolder above already exist. game:HttpGet() is a
+-- blocking, synchronous call — if it were left at the top level of this
+-- module (before any UI got created) a slow response, a rate limit, or
+-- pastefy.app being briefly unreachable would silently stall the entire
+-- script before CreateWindow ever ran, with no error printed. Wrapping
+-- it in task.spawn guarantees CreateWindow/CreateTab/etc. always run
+-- immediately; icons just merge in a moment later whenever the request
+-- finishes (or the built-in fallback set above stays in effect if it
+-- fails).
+task.spawn(function()
+	local ok, count = SlickUI:LoadIconPack("https://pastefy.app/e86T5YXs/raw")
+	if ok then
+		print("[SlickUI] Icon pack loaded:", count, "icons")
+	end
+end)
 
 function SlickUI:Notify(opts)
 	opts = opts or {}
